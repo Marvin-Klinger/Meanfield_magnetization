@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import alpha
 
-df = pd.read_excel("C:/Users/klinmarv/Nextcloud2/Doktor/10_Paper/MDPI_applSci_Focus_Issue_ADR/Data/MKL/MeanField/GdB3_0K4.xlsx", sheet_name=0)
+df = pd.read_excel("C:/Users/klinmarv/Nextcloud2/Doktor/10_Paper/MDPI_applSci_Focus_Issue_ADR/Data/MKL/MeanField/GdB9_2K0.xlsx", sheet_name=0)
 
 df["H"] = pd.to_numeric(df["H"], errors="coerce")
 df["M"] = pd.to_numeric(df["M"], errors="coerce")
@@ -15,7 +15,7 @@ H_data = df["H"].to_numpy()
 M_data = df["M"].to_numpy()
 M_data_meanField = np.zeros_like(M_data)
 
-T = 0.4
+T = 2.0
 g = 2
 J = 7/2
 kB = 1.380649e-23
@@ -80,3 +80,13 @@ plt.legend()
 plt.grid(True, linestyle=':', alpha=0.5)
 plt.tight_layout()
 plt.show()
+
+
+export_df = pd.DataFrame({
+    'Temperature': H_data,
+    'Fitted Moment': M_data_meanField
+})
+
+# Export both datasets to CSV
+with pd.ExcelWriter('GdB9_2K0.xlsx') as writer:
+    export_df.to_excel(writer, sheet_name='Fitted Curve', index=False)
