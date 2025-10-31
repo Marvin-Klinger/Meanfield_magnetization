@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import alpha
 
-df = pd.read_excel("C:/Users/klinmarv/Nextcloud2/Doktor/10_Paper/MDPI_applSci_Focus_Issue_ADR/Data/MKL/MeanField/GdB9_2K0.xlsx", sheet_name=0)
+df = pd.read_excel("C:/Users/klinmarv/Nextcloud2/Doktor/10_Paper/MDPI_applSci_Focus_Issue_ADR/Data/MKL/MeanField/GdB3_0K4.xlsx", sheet_name=0)
 
 df["H"] = pd.to_numeric(df["H"], errors="coerce")
 df["M"] = pd.to_numeric(df["M"], errors="coerce")
@@ -15,7 +15,7 @@ H_data = df["H"].to_numpy()
 M_data = df["M"].to_numpy()
 M_data_meanField = np.zeros_like(M_data)
 
-T = 2.0
+T = 0.4
 g = 2
 J = 7/2
 kB = 1.380649e-23
@@ -38,22 +38,22 @@ def to_x_meanField(H, alpha, m):
     return (H - alpha * m) * g * muB * J / (kB * T)
 
 
-def M_mean_field_single(H, Ms, alpha):
+def M_mean_field_single(H, Ms, alpha, x0 = 0.0):
     # f(M) must be zero for mean field solution
     def f(M):
         x = to_x_meanField(H, alpha, M)
-        return M - Ms * B_J(x)
+        return M - Ms * B_J(x) - x0 * H
 
     # solve the diff-eqation and find M where f(M) = 0
     sol = root_scalar(f, bracket=[-Ms, Ms], method='brentq')
-    #print(sol.root - Ms * B_J(to_x_meanField(H, alpha, sol.root))) #quick test to the solution (lower is better)
+    print(sol.root - Ms * B_J(to_x_meanField(H, alpha, sol.root))) #quick test to the solution (lower is better)
     return sol.root
 
 
 # solve for every H in the experimental dataset
-def solve_model(H_data, alpha):
+def solve_model(H_data, alpha, x0):
     for i in range(len(M_data)):
-        M_data_meanField[i] = M_mean_field_single(H_data[i], Msat, alpha)
+        M_data_meanField[i] = M_mean_field_single(H_data[i], Msat, alpha, x0)
     return M_data_meanField
 
 
@@ -63,12 +63,13 @@ def solve_model(H_data, alpha):
 M_free_ion = Msat * B_J(to_x_classical(H_data))
 
 # optimize alpha for the entire dataset
-p0 = [-0.1]  # initial guess for alpha
+p0 = [-0.1, -0.001]  # initial guess for alpha, x0
 popt, pcov = curve_fit(solve_model, H_data, M_data, p0 = p0)
-alpha_fit = popt
+alpha_fit = popt[0]
+x0_fit = popt[1]
 
-M_data_meanField = solve_model(H_data, alpha_fit)
-print(f" fitted parameter alpha = {alpha_fit}")
+M_data_meanField = solve_model(H_data, alpha_fit, x0_fit)
+print(f" fitted parameter alpha = {alpha_fit}, x0 = {x0_fit}")
 
 plt.figure(figsize=(7,5))
 
@@ -88,5 +89,5 @@ export_df = pd.DataFrame({
 })
 
 # Export both datasets to CSV
-with pd.ExcelWriter('GdB9_2K0.xlsx') as writer:
-    export_df.to_excel(writer, sheet_name='Fitted Curve', index=False)
+#with pd.ExcelWriter('GdB3_0K4.xlsx') as writer:
+#    export_df.to_excel(writer, sheet_name='Fitted Curve', index=False)
